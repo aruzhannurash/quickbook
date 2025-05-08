@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: quickbook
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  user-service:
+    build:
+      context: ./user-service
+    ports:
+      - "8080:8081"
+    depends_on:
+      - postgres
+    restart: on-failure
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=123
+      - DB_NAME=quickbook
+
+  specialist-service:
+    build:
+      context: ./specialist-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - user-service
+      - postgres
+    environment:
+      - USER_SERVICE_URL=http://user-service:8081
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=123
+      - DB_NAME=quickbook
+
+volumes:
+  pgdata:
